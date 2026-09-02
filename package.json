@@ -12,6 +12,7 @@
     "start": "node dist/index.js",
     "oauth:fixture": "node dist/index.js oauth --fixture",
     "preview:write": "node dist/index.js payroll-preview --write",
+    "intuit-map": "node dist/index.js intuit-map",
     "prove": "node dist/prove-mcp.js"
   },
   "engines": {

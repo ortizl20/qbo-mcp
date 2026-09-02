@@ -1,6 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { loadConfig, readJson, writeJson } from "./config.js";
+import {
+  buildAuthorizeUrl,
+  INTUIT_DOCS,
+  INTUIT_SCOPES,
+  officialRequestMap,
+} from "./intuit/official.js";
 import { renderPayrollHtml, renderPayrollMarkdown } from "./preview.js";
 import type {
   AppConfig,
@@ -44,7 +50,13 @@ export class QboStore {
     return session;
   }
 
-  startOAuth(): { authorizeUrl?: string; session?: OAuthSession; message: string } {
+  startOAuth(): {
+    authorizeUrl?: string;
+    session?: OAuthSession;
+    message: string;
+    docs?: string;
+    scope?: string;
+  } {
     if (this.config.mode === "fixture" || this.isPlaceholderApp()) {
       const session = this.completeFixtureOAuth();
       return {
@@ -59,18 +71,29 @@ export class QboStore {
       };
     }
 
-    const state = "qbo-mcp-door1";
-    const url = new URL("https://appcenter.intuit.com/connect/oauth2");
-    url.searchParams.set("client_id", this.config.intuitClientId);
-    url.searchParams.set("redirect_uri", this.config.intuitRedirectUri);
-    url.searchParams.set("response_type", "code");
-    url.searchParams.set("scope", "com.intuit.quickbooks.accounting");
-    url.searchParams.set("state", state);
+    const state = `qbo-mcp-${Date.now().toString(36)}`;
+    const authorizeUrl = buildAuthorizeUrl({
+      clientId: this.config.intuitClientId,
+      redirectUri: this.config.intuitRedirectUri,
+      state,
+    });
     return {
-      authorizeUrl: url.toString(),
+      authorizeUrl,
       message:
-        "Open the authorize URL, then exchange the callback code with your own Intuit app. Door 1 prove path uses --fixture instead.",
+        "Open the Intuit OAuth 2.0 authorize URL (browser required). Exchange the callback code once at the token endpoint. Door 1 prove path uses --fixture instead.",
+      docs: INTUIT_DOCS.oauth20,
+      scope: INTUIT_SCOPES.accounting,
     };
+  }
+
+  requestMap() {
+    const session = this.session();
+    return officialRequestMap({
+      env: this.config.intuitEnv,
+      clientId: this.config.intuitClientId || "replace_with_your_intuit_client_id",
+      redirectUri: this.config.intuitRedirectUri,
+      realmId: session?.realmId ?? "acme-bookkeeping-fixture",
+    });
   }
 
   completeFixtureOAuth(): OAuthSession {
@@ -78,6 +101,10 @@ export class QboStore {
     const session: OAuthSession = {
       ...recorded,
       mode: "fixture",
+      token_type: "bearer",
+      expires_in: recorded.expires_in ?? 3600,
+      access_token: recorded.accessToken,
+      refresh_token: recorded.refreshToken,
       connectedAt: new Date().toISOString(),
     };
     writeJson(this.config.tokensPath, session);
@@ -86,17 +113,44 @@ export class QboStore {
 
   readCompany(): Company {
     this.requireSession();
-    if (this.config.mode === "live") {
-      throw new Error(
-        "Live company read is not part of the Door 1 prove path. Use QBO_MODE=fixture or placeholder credentials.",
-      );
-    }
     return readJson<Company>(path.join(this.config.fixtureDir, "company.json"));
+  }
+
+  readCompanyOfficial() {
+    this.requireSession();
+    return {
+      company: this.readCompany(),
+      intuit: readJson<unknown>(path.join(this.config.fixtureDir, "companyinfo.json")),
+      request: this.requestMap().accounting,
+    };
   }
 
   listEmployees(): Employee[] {
     this.requireSession();
     return this.readEmployeesFile();
+  }
+
+  listEmployeesOfficial() {
+    const employees = this.listEmployees();
+    return {
+      company: this.readCompany().name,
+      employees,
+      intuit: {
+        QueryResponse: {
+          Employee: employees.map((item) => ({
+            Id: item.id,
+            DisplayName: item.displayName,
+            GivenName: item.givenName,
+            FamilyName: item.familyName,
+            Active: item.active,
+          })),
+          maxResults: employees.length,
+          startPosition: 1,
+        },
+      },
+      compensations: this.readCompensations(),
+      request: this.requestMap().accounting,
+    };
   }
 
   updateEmployeeSalary(employeeId: string, annualSalaryExample: number, confirm: boolean) {
@@ -120,13 +174,19 @@ export class QboStore {
       };
     }
     const next = employees.map((item) => (item.id === employeeId ? proposed : item));
-    writeJson(path.join(this.config.fixtureDir, "employees.json"), next);
+    writeJson(path.join(this.config.fixtureDir, "employees.json"), { employees: next });
+    this.writeCompensationRate(employeeId, annualSalaryExample);
     return {
       applied: true,
       confirmScreen: true,
-      message: "Example annual salary updated on the fixture employee. Payroll was not submitted.",
+      message:
+        "Example annual salary updated on the fixture compensation overlay. Accounting Employee has no annual salary field. Payroll was not submitted.",
       current: proposed,
       proposed,
+      intuit: {
+        employeeSparseUpdate: "not a payroll submit",
+        compensationResource: "payrollEmployeeCompensations",
+      },
     };
   }
 
@@ -143,7 +203,13 @@ export class QboStore {
       confirmScreen: true,
       note:
         recorded.note ??
-        "Door 1 dry-run. Confirm screen defaults ON. This connector never auto-submits payroll.",
+        "Door 1 dry-run. Confirm screen defaults ON. Official payslips appear only after a human runs payroll in QuickBooks. This connector never auto-submits payroll.",
+      intuit: {
+        payslipResource: "payrollPayslips",
+        createPayrollRun: null,
+        workforceSandbox: false,
+        docs: INTUIT_DOCS.payslips,
+      },
     };
   }
 
@@ -174,6 +240,11 @@ export class QboStore {
         annualSalaryExample: lines.reduce((sum, line) => sum + line.annualSalaryExample, 0),
       },
       note: "EXAMPLE totals for the recorded Acme Bookkeeping fixture. Screenshot this confirm screen. Do not treat as live pay.",
+      intuit: {
+        compensationsQuery: "payrollEmployeeCompensations",
+        payslipsQuery: "payrollPayslips",
+        createPayrollRun: null,
+      },
     };
 
     if (writeFiles) {
@@ -191,6 +262,29 @@ export class QboStore {
     const filePath = path.join(this.config.fixtureDir, "employees.json");
     const raw = readJson<{ employees?: Employee[] } | Employee[]>(filePath);
     return Array.isArray(raw) ? raw : (raw.employees ?? []);
+  }
+
+  private readCompensations(): unknown {
+    return readJson<unknown>(path.join(this.config.fixtureDir, "payroll-compensations.json"));
+  }
+
+  private writeCompensationRate(employeeId: string, annualSalaryExample: number): void {
+    const filePath = path.join(this.config.fixtureDir, "payroll-compensations.json");
+    const raw = readJson<{
+      data?: {
+        payrollEmployeeCompensations?: {
+          edges?: Array<{ node?: { employeeId?: string; rateExample?: { value?: string } } }>;
+        };
+      };
+      note?: string;
+    }>(filePath);
+    const edges = raw.data?.payrollEmployeeCompensations?.edges ?? [];
+    for (const edge of edges) {
+      if (edge.node?.employeeId === employeeId && edge.node.rateExample) {
+        edge.node.rateExample.value = String(annualSalaryExample);
+      }
+    }
+    writeJson(filePath, raw);
   }
 
   private isPlaceholderApp(): boolean {

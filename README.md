@@ -79,9 +79,26 @@ npx @modelcontextprotocol/inspector node dist/index.js
 
 There is no submit-payroll tool.
 
+## Official Intuit contracts
+
+Door 1 is mapped to published Intuit docs (not only MCP SDK docs). See `docs/intuit-map.md`.
+
+```bash
+node dist/index.js intuit-map
+```
+
+| Area | Official source | Door 1 |
+| --- | --- | --- |
+| OAuth 2.0 | [Set up OAuth 2.0](https://developer.intuit.com/app/developer/qbo/docs/develop/authentication-and-authorization/oauth-2.0) + [discovery](https://developer.api.intuit.com/.well-known/openid_sandbox_configuration) | Authorize URL / token exchange builders. Fixture OAuth does not call Intuit. |
+| Company + employees | Accounting REST `CompanyInfo` and `SELECT * FROM Employee` | Fixture returns official-shaped JSON. |
+| Pay rates | Workforce GraphQL `payrollEmployeeCompensations` (Silver+, **not in sandbox**) | Recorded Acme fixture. |
+| Payroll run | Payslips after a human runs payroll. No public create-run mutation. | Preview totals only. `QBO_DRY_RUN=1`. |
+
+No App Store submission. No production keys in this repo.
+
 ## BYOK live app (optional)
 
-Fill `.env` with your own Intuit app, keep `INTUIT_ENV=sandbox` and `QBO_DRY_RUN=1`, then call `qbo_oauth` with `fixture=false` to get an authorize URL. Door 1 is proven on the fixture; live pay is out of scope.
+Fill `.env` with your own Intuit app, keep `INTUIT_ENV=sandbox` and `QBO_DRY_RUN=1`, then call `qbo_oauth` with `fixture=false` to get the official authorize URL (`response_type=code`, scope `com.intuit.quickbooks.accounting`). Door 1 is proven on the fixture; live pay is out of scope.
 
 ## Prove
 

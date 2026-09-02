@@ -1,8 +1,13 @@
 {
   "mode": "fixture",
   "realmId": "acme-bookkeeping-fixture",
+  "token_type": "bearer",
+  "expires_in": 3600,
   "accessToken": "fixture-access-token-not-a-secret",
   "refreshToken": "fixture-refresh-token-not-a-secret",
+  "access_token": "fixture-access-token-not-a-secret",
+  "refresh_token": "fixture-refresh-token-not-a-secret",
+  "x_refresh_token_expires_in": 8640000,
   "connectedAt": "2026-01-15T00:00:00.000Z",
   "company": "Acme Bookkeeping"
 }

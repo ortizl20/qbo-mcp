@@ -59,6 +59,19 @@ node dist/index.js employees | tee /tmp/qbo-mcp-employees.txt
 grep -q 'Jordan Lee' /tmp/qbo-mcp-employees.txt
 grep -q 'Sam Patel' /tmp/qbo-mcp-employees.txt
 
+node dist/index.js intuit-map | tee /tmp/qbo-mcp-intuit-map.txt
+grep -q 'https://appcenter.intuit.com/connect/oauth2' /tmp/qbo-mcp-intuit-map.txt
+grep -q 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer' /tmp/qbo-mcp-intuit-map.txt
+grep -q 'com.intuit.quickbooks.accounting' /tmp/qbo-mcp-intuit-map.txt
+grep -q 'sandbox-quickbooks.api.intuit.com' /tmp/qbo-mcp-intuit-map.txt
+grep -qF 'SELECT * FROM Employee' /tmp/qbo-mcp-intuit-map.txt
+grep -q 'payrollEmployeeCompensations' /tmp/qbo-mcp-intuit-map.txt
+grep -q 'https://qb.api.intuit.com/graphql' /tmp/qbo-mcp-intuit-map.txt
+grep -q '"submitPayrollRun": null' /tmp/qbo-mcp-intuit-map.txt
+
+test -f docs/intuit-map.md
+grep -q 'developer.intuit.com' docs/intuit-map.md
+
 node dist/prove-mcp.js
 
 test -f fixtures/acme/payroll-preview.md

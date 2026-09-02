@@ -1,0 +1,51 @@
+{
+  "data": {
+    "payrollEmployeeCompensations": {
+      "edges": [
+        {
+          "node": {
+            "id": "comp-emp-001",
+            "active": true,
+            "employeeId": "emp-001",
+            "employerCompensation": {
+              "id": "ec-example-salary",
+              "name": "Example Salary",
+              "type": {
+                "key": "SALARY",
+                "description": "Annual salary example (round teaching number)",
+                "value": "SALARY"
+              }
+            },
+            "rateExample": {
+              "currency": "USD",
+              "value": "60000",
+              "unit": "YEAR"
+            }
+          }
+        },
+        {
+          "node": {
+            "id": "comp-emp-002",
+            "active": true,
+            "employeeId": "emp-002",
+            "employerCompensation": {
+              "id": "ec-example-salary",
+              "name": "Example Salary",
+              "type": {
+                "key": "SALARY",
+                "description": "Annual salary example (round teaching number)",
+                "value": "SALARY"
+              }
+            },
+            "rateExample": {
+              "currency": "USD",
+              "value": "72000",
+              "unit": "YEAR"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "note": "Recorded fixture for payrollEmployeeCompensations. Official GraphQL is partner-gated and not in sandbox."
+}

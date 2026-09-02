@@ -33,14 +33,14 @@ function createServer(): McpServer {
     "qbo_read_company",
     "Read the connected QuickBooks Online company profile.",
     {},
-    async () => text(store.readCompany()),
+    async () => text(store.readCompanyOfficial()),
   );
 
   server.tool(
     "qbo_list_employees",
     "List employees for the connected company (Acme Bookkeeping fixture names on the prove path).",
     {},
-    async () => text({ company: store.readCompany().name, employees: store.listEmployees() }),
+    async () => text(store.listEmployeesOfficial()),
   );
 
   server.tool(
@@ -101,10 +101,13 @@ async function runCli(argv: string[]): Promise<void> {
       break;
     }
     case "company":
-      console.log(formatToolResult(store.readCompany()));
+      console.log(formatToolResult(store.readCompanyOfficial()));
       break;
     case "employees":
-      console.log(formatToolResult({ company: store.readCompany().name, employees: store.listEmployees() }));
+      console.log(formatToolResult(store.listEmployeesOfficial()));
+      break;
+    case "intuit-map":
+      console.log(formatToolResult(store.requestMap()));
       break;
     case "salary": {
       const employeeId = rest[0];
@@ -124,7 +127,7 @@ async function runCli(argv: string[]): Promise<void> {
       break;
     default:
       throw new Error(
-        "usage: qbo-mcp | qbo-mcp oauth --fixture | company | employees | salary <id> <amount> --confirm | payroll-status | payroll-preview",
+        "usage: qbo-mcp | qbo-mcp oauth --fixture | company | employees | salary <id> <amount> --confirm | payroll-status | payroll-preview | intuit-map",
       );
   }
 }

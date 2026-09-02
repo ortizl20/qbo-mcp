@@ -26,6 +26,10 @@ export interface OAuthSession {
   refreshToken: string;
   connectedAt: string;
   company: string;
+  token_type?: "bearer";
+  expires_in?: number;
+  access_token?: string;
+  refresh_token?: string;
 }
 
 export interface PayrollStatus {
@@ -36,6 +40,12 @@ export interface PayrollStatus {
   dryRun: true;
   confirmScreen: true;
   note: string;
+  intuit?: {
+    payslipResource: string;
+    createPayrollRun: null;
+    workforceSandbox: false;
+    docs: string;
+  };
 }
 
 export interface PayrollLine {
@@ -61,6 +71,11 @@ export interface PayrollPreview {
   note: string;
   markdownPath?: string;
   htmlPath?: string;
+  intuit?: {
+    compensationsQuery: string;
+    payslipsQuery: string;
+    createPayrollRun: null;
+  };
 }
 
 export interface AppConfig {
