@@ -1,0 +1,8 @@
+{
+  "mode": "fixture",
+  "realmId": "acme-bookkeeping-fixture",
+  "accessToken": "fixture-access-token-not-a-secret",
+  "refreshToken": "fixture-refresh-token-not-a-secret",
+  "connectedAt": "2026-01-15T00:00:00.000Z",
+  "company": "Acme Bookkeeping"
+}

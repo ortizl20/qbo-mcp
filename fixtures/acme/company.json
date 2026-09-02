@@ -1,0 +1,8 @@
+{
+  "id": "acme-bookkeeping-fixture",
+  "name": "Acme Bookkeeping",
+  "legalName": "Acme Bookkeeping Example Co",
+  "country": "US",
+  "note": "Recorded fixture tenant for Door 1. Not a live company.",
+  "fixture": true
+}
