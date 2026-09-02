@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.local
+.qbo-tokens.json
+.fixture-work/
+*.log
+.DS_Store

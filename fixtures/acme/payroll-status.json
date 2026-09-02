@@ -1,0 +1,9 @@
+{
+  "runId": "pay-preview-acme-001",
+  "company": "Acme Bookkeeping",
+  "state": "dry_run_preview",
+  "submitted": false,
+  "dryRun": true,
+  "confirmScreen": true,
+  "note": "Recorded fixture payroll status. Confirm screen ON. Not submitted."
+}
